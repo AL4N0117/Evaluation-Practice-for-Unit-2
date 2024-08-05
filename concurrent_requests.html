@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concurrent Withdrawals</title>
+</head>
+<body>
+    <h1>Simulate Concurrent Withdrawals</h1>
+    <form id="withdrawalForm">
+        <label for="accountId">Account ID:</label>
+        <input type="number" id="accountId" name="accountId" value="1" required><br>
+
+        <label for="withdrawalAmount">Withdrawal Amount:</label>
+        <input type="number" id="withdrawalAmount" name="withdrawalAmount" step="0.01" value="10.00" required><br>
+
+        <label for="numRequests">Number of Requests:</label>
+        <input type="number" id="numRequests" name="numRequests" value="1000" required><br>
+
+        <button type="button" onclick="sendConcurrentRequests()">Start Requests</button>
+    </form>
+
+    <div id="results">
+        <h2>Results:</h2>
+        <ul id="resultsList"></ul>
+    </div>
+
+    <script>
+        function sendConcurrentRequests() {
+            const accountId = document.getElementById('accountId').value;
+            const withdrawalAmount = document.getElementById('withdrawalAmount').value;
+            const numRequests = document.getElementById('numRequests').value;
+            const url = 'http://localhost/withdraw.php'; // Update this URL if needed
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = ''; // Clear previous results
+
+            const requests = [];
+
+            for (let i = 0; i < numRequests; i++) {
+                const request = fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'account_id': accountId,
+                        'transaction_type': 'withdrawal',
+                        'transaction_amount': withdrawalAmount
+                    })
+                }).then(response => response.text())
+                  .then(data => {
+                      const listItem = document.createElement('li');
+                      listItem.textContent = `Request ${i + 1}: ${data}`;
+                      resultsList.appendChild(listItem);
+                  })
+                  .catch(error => {
+                      const listItem = document.createElement('li');
+                      listItem.textContent = `Request ${i + 1}: Error - ${error}`;
+                      resultsList.appendChild(listItem);
+                  });
+
+                requests.push(request);
+            }
+
+            Promise.all(requests).then(() => {
+                const completionMessage = document.createElement('p');
+                completionMessage.textContent = 'All requests completed.';
+                document.getElementById('results').appendChild(completionMessage);
+            });
+        }
+    </script>
+</body>
+</html>
